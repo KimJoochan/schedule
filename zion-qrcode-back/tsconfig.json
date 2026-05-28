@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",         // 최신 자바스크립트 문법 지원
+    "module": "CommonJS",       // Node.js의 기본 모듈 시스템
+    "rootDir": "./src",         // 소스 코드가 위치할 폴더
+    "outDir": "./dist",         // 컴파일된 JS 파일이 생성될 폴더
+    "strict": true,             // 엄격한 타입 검사 활성화
+    "esModuleInterop": true     // CommonJS 모듈을 쉽게 가져올 수 있게 지원
+  }
+}

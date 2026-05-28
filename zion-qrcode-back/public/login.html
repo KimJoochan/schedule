@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Zion Group API & WCF-1 Swagger</title>
+    <!-- Swagger UI CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #swagger-ui {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div id="swagger-ui"></div>
+
+    <!-- Swagger UI JS bundle -->
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+
+    <script>
+        window.onload = function() {
+            // OpenAPI 3.0 Specification Object
+            const spec = {
+                openapi: "3.0.0",
+                info: {
+                    title: "Zion Group Auth API & WCF-1 Specification",
+                    description: "신천지 플랫폼 서비스 OAuth 2.0 로그인 및 WCF-1 응답 처리 스펙을 정리한 문서입니다.",
+                    version: "1.0.0"
+                },
+                servers: [{
+                        url: "https://auth.ziongroup.net",
+                        description: "Auth Server (OAuth)"
+                    },
+                    {
+                        url: "https://api.ziongroup.net",
+                        description: "API Server (Resource)"
+                    }
+                ],
+                components: {
+                    securitySchemes: {
+                        bearerAuth: {
+                            type: "http",
+                            scheme: "bearer",
+                            bearerFormat: "JWT"
+                        }
+                    }
+                },
+                paths: {
+                    "/oauth/authorize": {
+                        get: {
+                            tags: ["1. OAuth 2.0 Authentication"],
+                            summary: "인가 코드(Authorization Code) 요청",
+                            description: "로그인 버튼 클릭 시 사용자 동의를 거쳐 토큰 발급용 코드를 받아옵니다.",
+                            parameters: [{
+                                    name: "client_id",
+                                    in: "query",
+                                    required: true,
+                                    schema: {
+                                        type: "string"
+                                    },
+                                    description: "앱 생성시 발급 받은 REST API 키"
+                                },
+                                {
+                                    name: "redirect_uri",
+                                    in: "query",
+                                    required: true,
+                                    schema: {
+                                        type: "string"
+                                    },
+                                    description: "코드를 리다이렉트 해줄 URI"
+                                },
+                                {
+                                    name: "response_type",
+                                    in: "query",
+                                    required: true,
+                                    schema: {
+                                        type: "string",
+                                        default: "code"
+                                    },
+                                    description: "code 문자열 값으로 고정"
+                                },
+                                {
+                                    name: "state",
+                                    in: "query",
+                                    required: false,
+                                    schema: {
+                                        type: "string"
+                                    },
+                                    description: "CSRF 공격 보호 및 상태 유지를 위한 값"
+                                },
+                                {
+                                    name: "encode_state",
+                                    in: "query",
+                                    required: false,
+                                    schema: {
+                                        type: "boolean",
+                                        default: true
+                                    },
+                                    description: "state 파라미터 사용 시 true로 고정"
+                                }
+                            ],
+                            responses: {
+                                "302": {
+                                    description: "Found - redirect_uri로 인가 코드(code)를 포함하여 리다이렉트",
+                                    headers: {
+                                        Location: {
+                                            schema: {
+                                                type: "string",
+                                                example: "http://your.website.domain.com/zion_oauth?code={authorize_code}"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "/oauth/token": {
+                        post: {
+                            tags: ["1. OAuth 2.0 Authentication"],
+                            summary: "사용자 토큰(Access Token) 발급 및 갱신",
+                            description: "발급받은 코드로 Access Token을 요청하거나, Refresh Token으로 토큰을 갱신합니다.",
+                            requestBody: {
+                                required: true,
+                                content: {
+                                    "application/x-www-form-urlencoded": {
+                                        schema: {
+                                            type: "object",
+                                            required: ["grant_type", "client_id"],
+                                            properties: {
+                                                grant_type: {
+                                                    type: "string",
+                                                    enum: ["authorization_code", "refresh_token"],
+                                                    description: "신규발급: authorization_code / 갱신: refresh_token"
+                                                },
+                                                client_id: {
+                                                    type: "string",
+                                                    description: "REST API 키"
+                                                },
+                                                redirect_uri: {
+                                                    type: "string",
+                                                    description: "코드가 리다이렉트 된 URI (신규 발급시 필수)"
+                                                },
+                                                code: {
+                                                    type: "string",
+                                                    description: "발급 받은 인증된 코드 (신규 발급시 필수)"
+                                                },
+                                                refresh_token: {
+                                                    type: "string",
+                                                    description: "갱신을 위한 리프레시 토큰 (갱신시 필수)"
+                                                },
+                                                client_secret: {
+                                                    type: "string",
+                                                    description: "ACTIVE 상태 인 경우 필수"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            responses: {
+                                "200": {
+                                    description: "토큰 발급 성공",
+                                    content: {
+                                        "application/json": {
+                                            schema: {
+                                                type: "object",
+                                                properties: {
+                                                    access_token: {
+                                                        type: "string",
+                                                        example: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                                                    },
+                                                    token_type: {
+                                                        type: "string",
+                                                        example: "bearer"
+                                                    },
+                                                    refresh_token: {
+                                                        type: "string",
+                                                        example: "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+                                                    },
+                                                    expires_in: {
+                                                        type: "integer",
+                                                        example: 43199
+                                                    },
+                                                    scope: {
+                                                        type: "string",
+                                                        example: "Basic_Profile"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "/api/auth/v3_0/me": {
+                        get: {
+                            tags: ["2. Resource API"],
+                            summary: "내 프로필 정보 조회",
+                            description: "발급받은 Access Token을 베어러 토큰으로 사용하여 유저 정보를 조회합니다.",
+                            security: [{
+                                bearerAuth: []
+                            }],
+                            parameters: [{
+                                name: "properties",
+                                in: "query",
+                                required: false,
+                                schema: {
+                                    type: "array",
+                                    items: {
+                                        type: "string"
+                                    }
+                                },
+                                style: "form",
+                                explode: true,
+                                description: "조회할 속성 (예: MOBILE, NAME)",
+                                example: ["MOBILE", "NAME"]
+                            }],
+                            responses: {
+                                "200": {
+                                    description: "프로필 조회 성공"
+                                }
+                            }
+                        }
+                    },
+                    "/wcf-1/example-endpoint": {
+                        post: {
+                            tags: ["3. WCF-1 Spec (공통 통신 규약)"],
+                            summary: "WCF-1 POST 통신 및 응답 처리 구조 (가상 엔드포인트)",
+                            description: "URL 값으로 HTTP POST(method=POST) 전송 시나리오를 설명하기 위한 가상 엔드포인트입니다.<br>화이트 도메인인 경우 인증 헤더를 포함합니다.",
+                            security: [{
+                                bearerAuth: []
+                            }],
+                            responses: {
+                                "200": {
+                                    description: "[성공] Status 200 - application/json인 경우 $.data.message 출력. 파싱 실패나 값이 없으면 기본 성공 메시지.",
+                                    content: {
+                                        "application/json": {
+                                            schema: {
+                                                type: "object",
+                                                properties: {
+                                                    data: {
+                                                        type: "object",
+                                                        properties: {
+                                                            message: {
+                                                                type: "string",
+                                                                example: "성공적으로 처리되었습니다."
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "400": {
+                                    description: "[실패] Status 200이 아닌 경우 - application/json인 경우 $.error.message 출력. 파싱 실패나 값이 없으면 기본 실패 메시지.",
+                                    content: {
+                                        "application/json": {
+                                            schema: {
+                                                type: "object",
+                                                properties: {
+                                                    error: {
+                                                        type: "object",
+                                                        properties: {
+                                                            message: {
+                                                                type: "string",
+                                                                example: "잘못된 요청입니다."
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            // Swagger UI Init
+            window.ui = SwaggerUIBundle({
+                spec: spec,
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIBundle.SwaggerUIStandalonePreset
+                ],
+                layout: "BaseLayout",
+                defaultModelsExpandDepth: -1 // Models 하단 영역 숨기기
+            });
+        };
+
+    </script>
+</body>
+
+</html>
