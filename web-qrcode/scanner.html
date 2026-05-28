@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>현장 QR 스캐너</title>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #1a1a1a;
+            color: white;
+            min-height: 100vh;
+        }
+        .header {
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+            background-color: #333;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        #reader {
+            width: 100%;
+            max-width: 500px;
+            margin-top: 20px;
+            background-color: black;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .result-box {
+            margin-top: 20px;
+            padding: 15px;
+            width: 90%;
+            max-width: 450px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            display: none; /* 스캔 전에는 숨김 */
+        }
+        .success { background-color: #4caf50; color: white; }
+        .error { background-color: #f44336; color: white; }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 5px;
+            background-color: #2196f3;
+            color: white;
+            cursor: pointer;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">인증 스캐너</div>
+    
+    <div id="reader"></div>
+
+    <div id="result-message" class="result-box"></div>
+    
+    <button id="rescan-btn" onclick="startScanner()">다시 스캔하기</button>
+
+    <script>
+        // 백엔드 API 주소 (환경에 맞게 수정)
+        const VERIFY_API_URL = 'http://113.131.151.103:3000/api/verify';
+        
+        let html5QrCode; // 전역 변수로 선언
+
+        // 결과 메시지 UI 제어
+        function showResult(isSuccess, message) {
+            const resultBox = document.getElementById('result-message');
+            const rescanBtn = document.getElementById('rescan-btn');
+            
+            resultBox.style.display = 'block';
+            resultBox.className = `result-box ${isSuccess ? 'success' : 'error'}`;
+            resultBox.innerText = message;
+            
+            rescanBtn.style.display = 'block'; // 다시 스캔 버튼 표시
+        }
+
+        // 스캔 성공 시 실행될 콜백 함수
+        async function onScanSuccess(decodedText, decodedResult) {
+            // 1. QR 코드가 인식되면 카메라 스캔을 잠시 멈춥니다. (중복 호출 방지)
+            try {
+                await html5QrCode.stop();
+                console.log("QR 스캔 성공, 서버 검증 시작:", decodedText);
+            } catch (err) {
+                console.error("카메라 중지 에러", err);
+            }
+
+            try {
+                // 2. 읽어들인 텍스트(theme_id=123&nonce=abc) 파싱
+                const params = new URLSearchParams(decodedText);
+                const theme_id = params.get('theme_id');
+                const nonce = params.get('nonce');
+
+                if (!theme_id || !nonce) {
+                    showResult(false, "유효하지 않은 QR 코드 형식입니다.");
+                    return;
+                }
+
+                // 3. 백엔드(검증 API)로 데이터 전송
+                const response = await fetch(VERIFY_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ theme_id, nonce })
+                });
+
+                const data = await response.json();
+
+                // 4. 결과 처리 (만료된 경우 포함)
+                if (response.ok) {
+                    showResult(true, "✅ 인증 완료: " + data.message);
+                } else {
+                    showResult(false, "❌ 인증 실패: " + data.message);
+                }
+
+            } catch (error) {
+                console.error("검증 서버 통신 오류:", error);
+                showResult(false, "서버와의 통신에 실패했습니다.");
+            }
+        }
+
+        // 스캔 실패(프레임 내에 QR이 없을 때) 시 실행되는 함수
+        function onScanFailure(error) {
+            // 콘솔이 너무 지저분해지는 것을 막기 위해 비워둡니다.
+        }
+
+        // 스캐너 초기화 및 시작 함수
+        function startScanner() {
+            // UI 초기화 (버튼 및 결과창 숨기기)
+            document.getElementById('result-message').style.display = 'none';
+            document.getElementById('rescan-btn').style.display = 'none';
+
+            // Html5Qrcode 객체가 없으면 생성 (최초 1회)
+            if (!html5QrCode) {
+                html5QrCode = new Html5Qrcode("reader");
+            }
+
+            // 후면 카메라(environment) 우선 사용 및 스캔 설정
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                config, 
+                onScanSuccess,
+                onScanFailure // 실패 콜백 추가
+            ).catch(err => {
+                console.error("카메라 시작 에러:", err);
+                alert("카메라 권한을 허용해주세요. (안드로이드 크롬은 HTTPS 환경이 필수입니다.)");
+            });
+        }
+
+        // DOM이 로드되면 바로 스캐너 시작
+        window.addEventListener('DOMContentLoaded', () => {
+            startScanner();
+        });
+    </script>
+</body>
+</html>

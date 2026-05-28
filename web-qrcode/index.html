@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 QR 인증</title>
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f4f4f4;
+            margin: 0;
+        }
+        .qr-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .qr-image-wrapper {
+            width: 300px;
+            height: 300px;
+            margin: 20px auto;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #qr-image {
+            max-width: 100%;
+            display: none; /* 초기에는 숨김 */
+        }
+        .timer {
+            color: #ff4d4f;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-top: 10px;
+        }
+        .loading {
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="qr-container">
+        <h2>관리자 인증 QR</h2>
+        <p>현장 검증을 위해 스캔해주세요.</p>
+        
+        <div class="qr-image-wrapper">
+            <span id="loading-text" class="loading">QR 코드를 불러오는 중...</span>
+            <img id="qr-image" alt="인증용 QR 코드" />
+        </div>
+        
+        <div class="timer">
+            남은 시간: <span id="time-left">03:00</span>
+        </div>
+    </div>
+
+    <script>
+        // 타깃 고유 식별자 (실제 환경에서는 동적으로 주입하거나 URL에서 가져옴)
+        const THEME_ID = 'theme_12345';
+        
+        // 백엔드 API 엔드포인트 주소 (로컬 테스트 시 3000번 포트 사용)
+        const API_URL = `http://localhost:3000/api/qrcode?theme_id=${THEME_ID}`;
+        
+        let refreshTimer = null;
+        let countdownInterval = null;
+
+        // 시간 포맷팅 함수 (초 -> MM:SS)
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        // 카운트다운 UI 업데이트 함수
+        function startCountdown(ttlSeconds) {
+            let timeLeft = ttlSeconds;
+            document.getElementById('time-left').textContent = formatTime(timeLeft);
+
+            if (countdownInterval) clearInterval(countdownInterval);
+
+            countdownInterval = setInterval(() => {
+                timeLeft -= 1;
+                document.getElementById('time-left').textContent = formatTime(timeLeft);
+
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                }
+            }, 1000);
+        }
+
+        // QR 코드 API 호출 및 이미지 업데이트 함수
+        async function fetchAndDisplayQRCode() {
+            try {
+                // API 호출
+                const response = await fetch(API_URL);
+                const result = await response.json();
+
+                if (result.success) {
+                    const { qrImage, ttl } = result.data;
+                    
+                    // 이미지 태그 업데이트
+                    const imgElement = document.getElementById('qr-image');
+                    const loadingText = document.getElementById('loading-text');
+                    
+                    imgElement.src = qrImage;
+                    imgElement.style.display = 'block';
+                    loadingText.style.display = 'none';
+
+                    // 카운트다운 시작
+                    startCountdown(ttl);
+
+                    // 기존 갱신 타이머가 있다면 초기화
+                    if (refreshTimer) clearTimeout(refreshTimer);
+                    
+                    // ttl(예: 180초) 이후에 다시 QR 코드를 발급받도록 예약
+                    refreshTimer = setTimeout(() => {
+                        fetchAndDisplayQRCode();
+                    }, ttl * 1000); 
+
+                } else {
+                    alert("QR 코드를 불러오는데 실패했습니다.");
+                }
+            } catch (error) {
+                console.error("QR Fetch Error:", error);
+                document.getElementById('loading-text').textContent = "오류가 발생했습니다.";
+            }
+        }
+
+        // 페이지 로드 시 최초 1회 실행
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchAndDisplayQRCode();
+        });
+    </script>
+</body>
+</html>
