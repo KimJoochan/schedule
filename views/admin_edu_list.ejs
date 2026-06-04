@@ -1,0 +1,69 @@
+<%- include('partials/header') %>
+<header class="h-16 bg-white border-b border-gray-200 flex items-center px-8 shadow-sm">
+    <h2 class="text-xl font-semibold text-gray-700">교육 관리 > 교육 생성</h2>
+</header>
+
+<div class="p-8 space-y-8">
+    <section class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+            <h3 class="text-lg font-bold">진행 중인 교육 리스트</h3>
+            <div class="text-sm text-gray-500">총 3건</div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-white border-b border-gray-200 text-sm text-gray-600">
+                        <th class="py-3 px-6 font-semibold">No</th>
+                        <th class="py-3 px-6 font-semibold">교육 제목</th>
+                        <th class="py-3 px-6 font-semibold">장소</th>
+                        <th class="py-3 px-6 font-semibold">날짜 시간</th>
+                        <th class="py-3 px-6 font-semibold text-center">출결 관리</th>
+                        <th class="py-3 px-6 font-semibold text-center">출결 통계</th>
+                        <th class="py-3 px-6 font-semibold text-center">출결 명단</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm text-gray-700">
+                    <% if (list && list.length > 0) { %>
+                        <% list.forEach((row, index) => { %>
+                        <tr class="border-b border-gray-100 hover:bg-gray-50">
+                            <td class="py-3 px-6">3</td>
+                            <td class="py-3 px-6 font-medium text-gray-900">
+                                <%= row.title %>
+                            </td>
+                            <td class="py-3 px-6">
+                                <%= row.location %>
+                            </td>
+                            <td class="py-3 px-6">
+                                (<%= row.edu_date %>) <%= row.start_time %> ~ <%= row.end_time %>
+                            </td>
+                            <td class="py-3 px-6 text-center">
+                                <a href="/admin_qr_view?idx=<%= row.idx %>" target="_blank" class="inline-flex items-center justify-center bg-gray-800 hover:bg-black text-white py-1.5 px-4 rounded shadow-sm text-xs font-medium transition-colors">
+                                    QR 띄우기
+                                </a>
+                            </td>
+                            <td class="py-3 px-6 text-center">
+                                <span class="text-xl"><%= row.total_people %></span>
+                                <spam>/</spam>
+                                <span class="text-orange-500 text-xl"><%= row.attence_cnt %></span>
+                            </td>
+                            <td class="py-3 px-6 text-center">
+                                <a href="/admin_people_list?idx=<%= row.idx %>" class="inline-flex items-center justify-center bg-gray-800 hover:bg-black text-white py-1.5 px-4 rounded shadow-sm text-xs font-medium transition-colors">
+                                    명단 확인하기
+                                </a>
+                            </td>
+                        </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="7" class="px-4 py-12 text-center text-gray-400">
+                                현재 등록된 교육 과정이 존재하지 않습니다.
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+<%- include('partials/footer') %>

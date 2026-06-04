@@ -1,0 +1,25 @@
+        </main>
+    </div>
+    <div id="loadingOverlay" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center z-50 transition-all duration-300">
+        <div class="bg-white p-6 rounded-xl shadow-xl flex flex-col items-center gap-4 border border-gray-100">
+            <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+            <div class="text-center">
+                <p class="text-gray-900 font-bold text-base">데이터 처리 중</p>
+                <p class="text-gray-400 text-xs mt-1">잠시만 기다려 주세요...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleQRModal(show) {
+            const modal = document.getElementById('qrModal');
+            if (show) {
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+    </script>
+</body>
+</html>

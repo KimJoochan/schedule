@@ -3,26 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Auth & Checklist System (가상 시뮬레이터)</title>
+    <title>QR Auth & Checklist System</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-[#f5f5f5] min-h-screen flex items-center justify-center font-sans antialiased py-10">
+<body class="bg-[#f5f5f5] min-h-screen flex flex-col items-center justify-center font-sans antialiased py-10">
 
     <div class="bg-white p-6 sm:p-8 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.08)] max-w-md w-full mx-4 border border-gray-100">
         
         <div class="text-center mb-6">
             <h2 class="text-2xl font-semibold text-gray-800 tracking-tight">QR 인증 및 트래킹 시스템</h2>
-            <p class="text-xs text-orange-500 font-bold mt-1 uppercase tracking-wider">⚠️ 가상 QR 스캔 테스트 모드</p>
+            <p class="text-xs text-gray-400 font-medium mt-1 uppercase tracking-wider">통합 테스트 및 아키텍처 검증 모듈</p>
             <div class="w-full h-[1px] bg-gray-100 mt-4"></div>
         </div>
 
-        <div class="flex flex-col items-center justify-center min-h-[260px] bg-gray-50 rounded-lg p-4 border border-gray-200/60 relative overflow-hidden">
-            <div id="loadingMessage" class="text-sm font-medium text-gray-500 animate-pulse hidden">
+        <div class="flex flex-col items-center justify-center min-h-[260px] bg-gray-50 rounded-lg p-4 border border-gray-200/60">
+            <div id="loadingMessage" class="text-sm font-medium text-gray-500 animate-pulse">
                 🎥 카메라 권한 요청 중...
             </div>
             
-            <canvas id="canvas" class="w-full max-w-[360px] border border-gray-300 rounded-md shadow-sm bg-white" hidden></canvas>
+            <canvas id="canvas" class="w-full max-w-[360px] border border-gray-300 rounded-md shadow-sm bg-black" hidden></canvas>
             
             <div id="result" class="mt-4 text-sm font-semibold text-blue-600 tracking-wide">
                 스캔 대기 중...
@@ -31,68 +31,97 @@
 
         <div class="mt-6 flex flex-col gap-3">
             <button class="w-full py-3 px-4 bg-[#1976d2] hover:bg-[#1565c0] text-white font-semibold text-sm rounded-md shadow-[0_1px_3px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_8px_rgba(0,0,0,0.2)] transition-all duration-200 ease-in-out uppercase tracking-wider focus:outline-none" onclick="startCamera()">
-                가상 QR 코드 로드하기
+                카메라 다시 켜기
             </button>
         </div>
-        <div class="mt-3 flex flex-col gap-3">
+        <div class="mt-6 flex flex-col gap-3">
             <button class="w-full py-3 px-4 bg-[#455a64] hover:bg-[#37474f] text-white font-semibold text-sm rounded-md shadow-[0_1px_3px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_8px_rgba(0,0,0,0.2)] transition-all duration-200 ease-in-out uppercase tracking-wider focus:outline-none" onclick="confirmSatus()">
                 출결 상태 확인하기
             </button>
         </div>
     </div>
+    <div class="mt-6 p-4 bg-slate-950 rounded-lg border border-slate-800 font-mono text-xs max-w-md mx-auto">
+        <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-2 text-slate-400 font-bold">
+            <span>⚙️ 디버그 로그 관제창</span>
+            <button type="button" onclick="document.getElementById('debugConsole').innerText = '';" class="bg-slate-800 hover:bg-slate-700 text-white px-2 py-0.5 rounded text-[10px]">지우기</button>
+        </div>
+        <div id="debugConsole" class="h-48 overflow-y-auto text-left space-y-1 text-emerald-400 break-all">
+            [대기] 스캔이 시작되면 로그가 이곳에 기록됩니다...
+        </div>
+    </div>
 
     <script>
+
+        function logStep(message, isError = false) {
+            const consoleDiv = document.getElementById("debugConsole");
+            if (!consoleDiv) return;
+
+            const now = new Date();
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}.${String(now.getMilliseconds()).padStart(3, '0')}`;
+            
+            // 에러 플래그에 따라 글자 색상 분기
+            const colorClass = isError ? 'text-rose-400 font-bold' : 'text-emerald-400';
+            
+            // 최신 로그가 맨 위에 쌓이도록 처리 (원하시면 += 로 밑에 쌓으셔도 됩니다)
+            consoleDiv.innerHTML = `<div class="${colorClass}">[${timeStr}] ${message}</div>` + consoleDiv.innerHTML;
+        }
+
         function confirmSatus(){
             location.href = '/my_status';
         }
-
+        const video = document.createElement("video");
         const canvasElement = document.getElementById("canvas");
-        const canvas = canvasElement.getContext("2d", { willReadFrequently: true });
+        const canvas = canvasElement.getContext("2d");
         const loadingMessage = document.getElementById("loadingMessage");
         const resultDiv = document.getElementById("result");
 
+        // 임의의 가상 토큰 데이터 (실제 연동 시 로그인 세션값 바인딩)
         const MY_KAKAO_TOKEN = "KAKAOTALK_ACCESS_TOKEN_SAMPLE_12345";
         let isScanning = true;
 
-        // 테스트용 오픈소스 가상 QR 코드 이미지 (접속 시 /qr_scan 구조의 명세를 담은 샘플)
-        const sampleQrImageUrl = "https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://auth.ziongroup.net/attendance/verify?theme_id=999";
-        const qrImage = new Image();
-        qrImage.crossOrigin = "Anonymous"; // jsqR의 getImageData CORS 보안 제약 우회 설정
-
-        // [동작 실행] 페이지 로드 시 가상 카메라 구동
+        // [동작 실행] 페이지 로드 시 카메라 초기화
         startCamera();
 
-        // 가상 QR 구동 함수
+        // 카메라 스트림 구동 함수
         function startCamera() {
-            isScanning = true;
-            resultDiv.innerText = "가상 QR 이미지 분석 중...";
-            resultDiv.style.color = "#2563eb";
-            
-            // 이미지 로드가 완료되면 캔버스 렌더링 및 디코딩 루프 시작
-            qrImage.onload = function() {
-                loadingMessage.hidden = true;
-                canvasElement.hidden = false;
+            // 💡 [방어 코드] 보안 환경(HTTPS) 검증 단계 추가
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                loadingMessage.innerText = "🔒 보안 에러: 카메라(API)는 HTTPS 환경 또는 localhost에서만 구동됩니다.";
+                loadingMessage.classList.remove('animate-pulse');
+                loadingMessage.style.color = "#dc2626"; // red-600
+                return;
+            }
 
-                // 캔버스 크기를 가상 이미지 규격에 동기화
-                canvasElement.width = 400;
-                canvasElement.height = 400;
-                
-                // 프레임 추적 틱 가동
+            isScanning = true;
+            resultDiv.innerText = "스캔 대기 중...";
+            resultDiv.style.color = "#2563eb"; // Tailwind blue-600
+
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+            .then(function(stream) {
+                video.srcObject = stream;
+                video.setAttribute("playsinline", true); 
+                video.play();
                 requestAnimationFrame(tick);
-            };
-            
-            // 이미지 소스 공급
-            qrImage.src = sampleQrImageUrl;
+            }).catch(function(err) {
+                loadingMessage.innerText = "🎥 카메라 접근 실패: 권한을 허용해주세요.";
+                loadingMessage.classList.remove('animate-pulse');
+                loadingMessage.style.color = "#dc2626";
+                console.error(err);
+            });
         }
 
-        // 프레임 추적 및 QR 디코딩 (가상 이미지 타겟 렌더링)
+        // 프레임 추적 및 QR 디코딩
         function tick() {
             if (!isScanning) return;
 
-            // 캔버스에 가상 QR 이미지를 정적으로 드로잉
-            canvas.drawImage(qrImage, 0, 0, canvasElement.width, canvasElement.height);
-            
-            try {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                loadingMessage.hidden = true;
+                canvasElement.hidden = false;
+
+                canvasElement.height = video.videoHeight;
+                canvasElement.width = video.videoWidth;
+                canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+                
                 const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
                 const code = jsQR(imageData.data, imageData.width, imageData.height, {
                     inversionAttempts: "dontInvert",
@@ -100,21 +129,12 @@
 
                 if (code) {
                     isScanning = false;
-                    // 디바운싱 제어 확보 후 하이라이트 박스 및 API 통신단 바인딩
                     drawSuccessBox(code.location);
                     processRedirect(code.data);
                     return;
                 }
-            } catch (e) {
-                console.error("CORS 또는 이미지 데이터 획득 실패:", e);
-                resultDiv.innerText = "이미지 분석 오류";
-                resultDiv.style.color = "#dc2626";
-                return;
             }
-
-            if (isScanning) {
-                requestAnimationFrame(tick);
-            }
+            requestAnimationFrame(tick);
         }
 
         // 스캔 성공 타겟 하이라이트 박스 드로잉
@@ -125,42 +145,95 @@
             canvas.lineTo(loc.bottomRightCorner.x, loc.bottomRightCorner.y);
             canvas.lineTo(loc.bottomLeftCorner.x, loc.bottomLeftCorner.y);
             canvas.closePath();
-            canvas.lineWidth = 8; // 고해상도 가상 이미지 대비 보정 선폭
-            canvas.strokeStyle = "#ef4444";
+            canvas.lineWidth = 5;
+            canvas.strokeStyle = "#ef4444"; // 초점이 잡혔을 때의 직관적인 Red 하이라이트
             canvas.stroke();
         }
 
         // 비동기 데이터 전송 처리 로직
         async function processRedirect(scannedUrl) {
             try {
-                resultDiv.innerText = `스캔 데이터 인식 완료! 전송 중...`;
-                resultDiv.style.color = "#ea580c";
+                // 디버깅용 로그: 실제로 스캐너가 QR에서 어떤 문자열을 추출했는지 눈으로 확인합니다.
+                console.log("🔍 [스캔된 원본 문자열]:", scannedUrl);
+                logStep(`🚀 processRedirect() 진입성공 | 원본데이터: ${scannedUrl}`);
 
-                const formData = new FormData();
-                formData.append("target_url", scannedUrl); 
-                formData.append("kakao_token", MY_KAKAO_TOKEN); 
-
-                const response = await fetch("https://httpbin.org/post", {
-                    method: "POST",
-                    body: formData
-                });
-
-                if (response.ok) {
-                    const res = await response.json();
-                    console.log("가상 통신 성공 데이터:", res);
-                    
-                    // 파싱된 가상 QR 내부 데이터 정보 노출
-                    resultDiv.innerHTML = `인증 성공!<br><span class="text-xs text-gray-500 font-mono">${scannedUrl}</span>`;
-                    resultDiv.style.color = "#16a34a";
-                } else {
-                    throw new Error("서버 에러코드: " + response.status);
+                if (!scannedUrl) {
+                    throw new Error("스캔된 데이터가 비어 있습니다.");
                 }
+
+                let finalUrl = scannedUrl.trim();
+                logStep(`🔍 1차 주소 필터링 시작...`);
+
+                // 💡 [방어 코드 1] http로 시작하지 않는 파편 데이터가 들어왔을 때의 예외 처리
+                if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+                    // 만약 "?idx=12..." 형태로 인자값만 들어왔다면 임시 도메인을 붙여서 URL 객체가 파싱할 수 있게 조립해 줍니다.
+                    if (finalUrl.startsWith('?') || finalUrl.includes('idx=')) {
+                        finalUrl = "https://temporary.com/" + (finalUrl.startsWith('?') ? finalUrl : '?' + finalUrl);
+                        logStep(`정제된 임시 주소 변환: ${finalUrl}`);
+                    } else {
+                        throw new Error("올바른 URL 주소 형식이 아닙니다.");
+                    }
+                }
+                logStep(`🧩 자바스크립트 new URL() 파싱을 시도합니다.`);
+                // 이제 안전하게 URL 객체 생성 (주소가 올바르지 않으면 여기서 catch로 가지만 위에서 1차 차단됨)
+                const urlObj = new URL(finalUrl);
+                
+                const idx = urlObj.searchParams.get("idx");
+                const nonce = urlObj.searchParams.get("nonce");
+                logStep(`파싱 결과 매핑 확인 -> idx: ${idx}, nonce: ${nonce}`);
+
+                if (!idx || !nonce) {
+                    logStep(`❌ 필수 파라미터가 누락되어 검증을 중단합니다.`, true);
+                    alert("올바르지 않은 QR코드 규격입니다. (필수 파라미터 누락)");
+                    return false;
+                }
+
+                resultDiv.innerText = "데이터 검증 및 전송 중...";
+                resultDiv.style.color = "#ea580c"; 
+
+                // 💡 [핵심 교정] FormData 대신 백엔드가 찰떡같이 알아먹는 JSON 전송 규격으로 치환
+                const payload = {
+                    idx: parseInt(idx, 10),
+                    nonce: nonce,
+                    user_idx: 123
+                };
+
+                let url = "https://splendid-earwig-31.loca.lt";
+                let targetApi = url+"/api/verify";
+                logStep(`📦 백엔드 전송용 JSON 페이로드 빌드 완료: ${JSON.stringify(payload)}`);
+                logStep(`📡 백엔드 API 서버 호출 시도 -> 목적지: ${targetApi}`);
+
+                const response = await fetch(targetApi, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json" // 백엔드 Express parser 연동 필수 설정
+                    },
+                    body: JSON.stringify(payload)
+                });
+                logStep(`📥 백엔드 응답 도착 -> HTTP 상태코드: ${response.status}`);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || "서버 인증에 실패했습니다.");
+                }
+
+                const result = await response.json();
+                logStep(`🎉 최종 검증 통과 성공! 백엔드 메시지: ${result.message}`);
+                
+                resultDiv.innerText = "✅ " + result.message;
+                resultDiv.style.color = "#16a34a"; 
+                alert(result.message);
+                location.href= `/my_status?idx=${parseInt(idx, 10)}`
+
             } catch (e) {
                 console.error("전송 오류:", e);
-                resultDiv.innerText = "처리 실패: " + e.message;
-                resultDiv.style.color = "#dc2626";
+                logStep(`🚨 에러 트랙킹 터짐: ${e.message}`, true);
+                // 💡 [가독성 개선] Object 전체를 JSON.stringify 하면 메시지가 숨겨질 수 있으므로 e.message를 우선 표기
+                resultDiv.innerText = "처리 실패: " + JSON.stringify(e);
+                resultDiv.style.color = "#dc2626"; 
             }
         }
+
+        // 기획/개발 누락 방지 가이드 문서 추출 함수
     </script>
 </body>
 </html>

@@ -1,0 +1,152 @@
+<%- include('partials/header') %>
+<header class="h-16 bg-white border-b border-gray-200 flex items-center px-8 shadow-sm">
+    <h2 class="text-xl font-semibold text-gray-700">교육 관리 > 교육 생성</h2>
+</header>
+
+<div class="p-8 space-y-8">
+    <section class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h3 class="text-lg font-bold mb-4 border-b pb-2">📂 신규 교육 생성 및 출결 정책 설정</h3>
+        
+        <form id="educationForm" class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            
+            <div class="col-span-1 md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">교육 제목</label>
+                <input type="text" name="title" id="title" placeholder="예: 2026년 상반기 신입사원 OJT" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div class="col-span-1 md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">교육 장소</label>
+                <input type="text" name="location" id="location" placeholder="예: 제 1대강당 / 대회의실" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div class="col-span-1 md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">교육 시작 일시 (연도/날짜/시간)</label>
+                <input type="text" name="start_time" id="startTimePicker" placeholder="시작 일시 선택..." class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer">
+            </div>
+
+            <div class="col-span-1 md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">교육 종료 일시 (연도/날짜/시간)</label>
+                <input type="text" name="end_time" id="endTimePicker" placeholder="종료 일시 선택..." class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer">
+            </div>
+
+            <div class="col-span-1 md:col-span-4 border-t pt-4 mt-2">
+                <h4 class="text-sm font-semibold text-blue-600 mb-3">⏱️ 출결 판정 및 통계 기준 설정</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">통계 기점 시간 (기준점)</label>
+                        <select name="stat_base_type" id="statBaseType" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                            <option value="START">교육 시작 시간 기준 (입실 체크)</option>
+                            <option value="END">교육 종료 시간 기준 (퇴실 체크)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">출결 인정 시간 범위 (분)</label>
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-400 text-sm">기준 시간 기준 ±</span>
+                            <input type="number" name="stat_range_min" id="statRangeMin" value="30" min="0" max="180" class="w-24 border border-gray-300 rounded-md px-3 py-2 text-center focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <span class="text-gray-600 text-sm">분 동안 출석 인정</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">통계 기준 총원 설정</label>
+                        <div class="flex flex-col gap-1.5">
+                            <div class="flex items-center gap-2">
+                                <span class="text-gray-400 text-sm">참석 예정자</span>
+                                <input type="number" name="total_people" id="total_people" placeholder="0" min="1" class="w-24 border border-gray-300 rounded-md px-3 py-2 text-center focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <span class="text-gray-600 text-sm">명 명단 기준</span>
+                            </div>
+                            <p class="text-xs text-gray-400 leading-relaxed">
+                                * 입력된 총원은 당일 실시간 출석률(<span class="text-blue-500 font-medium">출석수/총원</span>) 통계 산출의 기준값으로 사용됩니다.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-1 md:col-span-4 flex justify-end gap-3 border-t pt-4">
+                <button type="button" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-6 rounded-md transition-colors">
+                    취소
+                </button>
+                <button type="button" id="btnSubmit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md shadow-sm transition-colors">
+                    교육 등록 및 QR 생성
+                </button>
+            </div>
+        </form>
+    </section>
+</div>
+
+<script>
+    // 페이지 로드 시 플러그인 초기화 및 이벤트 리스너 바인딩
+    document.addEventListener("DOMContentLoaded", function() {
+        // 1. Flatpickr 달력 + 시간 선택 플러그인 세팅
+        const config = {
+            locale: "ko",              // 한국어 설정
+            enableTime: true,          // 시간 선택 활성화
+            dateFormat: "Y-m-d H:i:S", // 백엔드 MariaDB DATETIME과 완벽 호환되는 포맷 (YYYY-MM-DD HH:MM:SS)
+            time_24hr: true,           // 24시간제 표시
+            minuteIncrement: 1         // 분 단위 조절 간격
+        };
+
+        flatpickr("#startTimePicker", config);
+        flatpickr("#endTimePicker", config);
+
+        // 2. 생성하기 버튼 클릭 이벤트 헨들러
+        document.getElementById("btnSubmit").addEventListener("click", async function() {
+            const loadingOverlay = document.getElementById("loadingOverlay");
+            
+            // 필수값 유효성 검사 (간단한 예시)
+            if(!document.getElementById("title").value.trim()) {
+                alert("교육 제목을 입력해주세요.");
+                return;
+            }
+            if(!document.getElementById("startTimePicker").value || !document.getElementById("endTimePicker").value) {
+                alert("교육 시작 및 종료 일시를 선택해주세요.");
+                return;
+            }
+
+            // 3. FormData 객체 생성 (이 방식이 쿼리문 날리듯 모든 인풋 값을 한 번에 싹 긁어옵니다)
+            const formElement = document.getElementById("educationForm");
+            const formData = new FormData(formElement);
+
+            // 4. [확인 및 검증 단계] 데이터가 잘 들어갔는지 콘솔과 팝업창으로 확인하기
+            console.log("--- 🚀 전송될 FormData 내부 데이터 확인 ---");
+            
+            let alertMessage = "📌 [입력 데이터 확인]\n\n";
+            
+            // FormData는 특성상 console.log(formData)를 하면 내부가 보이지 않기 때문에, 
+            // 아래처럼 반복문을 돌려서 검증하는 것이 표준 정석입니다.
+            formData.forEach(function(value, key) {
+                console.log(`${key} : ${value}`);
+                alertMessage += `${key} ➔ ${value}\n`;
+            });
+
+            // 관리자 확인용 alert 창 팝업
+
+            const plainDataObject = Object.fromEntries(formData.entries());
+            loadingOverlay.classList.remove('hidden');
+            try{
+                // 5. 실제 백엔드 연동 시 사용할 axios 통신 코드 템플릿
+                let res = await fetch('/api/create_education', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json' // ⭐ 백엔드에 "이 데이터는 JSON이야"라고 알려줌
+                    },
+                    body: JSON.stringify(plainDataObject) // ⭐ 오브젝트를 문자열로 직렬화하여 전송
+                });
+
+                let result = await res.json();
+                console.log("서버 응답 결과:", result);
+                
+                alert(result.message);
+            }catch(error){
+                console.error("통신 장애 내역:", error);
+                alert(error.message);
+            }finally{
+                loadingOverlay.classList.add('hidden');
+            }
+        });
+    });
+</script>
+<%- include('partials/footer') %>

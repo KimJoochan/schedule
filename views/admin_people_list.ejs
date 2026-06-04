@@ -1,0 +1,66 @@
+<%- include('partials/header') %>
+<header class="h-16 bg-white border-b border-gray-200 flex items-center px-8 shadow-sm">
+    <h2 class="text-xl font-semibold text-gray-700">교육 관리 > 교육 관리</h2>
+</header>
+
+<div class="p-8 space-y-8">
+    <section class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+            <h3 class="text-lg font-bold">(<%= info.title %>) 명단 리스트</h3>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-white border-b border-gray-200 text-sm text-gray-600">
+                        <th class="py-3 px-6 font-semibold">No</th>
+                        <th class="py-3 px-6 font-semibold">교회</th>
+                        <th class="py-3 px-6 font-semibold">부서</th>
+                        <th class="py-3 px-6 font-semibold">지역</th>
+                        <th class="py-3 px-6 font-semibold">팀/구역</th>
+                        <th class="py-3 px-6 font-semibold">직책</th>
+                        <th class="py-3 px-6 font-semibold">성함</th>
+                        <th class="py-3 px-6 font-semibold">체크시간</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm text-gray-700">
+                    <% if (list && list.length > 0) { %>
+                        <% list.forEach((row, index) => { %>
+                        <tr class="border-b border-gray-100 hover:bg-gray-50">
+                            <td class="py-3 px-6"></td>
+                            <td class="py-3 px-6 font-medium text-gray-900">
+                                <%= row.user_social_church %>
+                            </td>
+                            <td class="py-3 px-6">
+                                <%= row.user_social_major %>
+                            </td>
+                            <td class="py-3 px-6">
+                                <%= row.user_social_minor %>
+                            </td>
+                            <td class="py-3 px-6">
+                                <%= row.user_social_goyuck %>
+                            </td>
+                            <td class="py-3 px-6">
+                                <%= row.user_social_grade %>
+                            </td>
+                            <td class="py-3 px-6">
+                                <%= row.user_social_name %>
+                            </td>
+                            <td class="py-3 px-6">
+                                <%= row.regdate %>
+                            </td>
+                        </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="7" class="px-4 py-12 text-center text-gray-400">
+                                현재 인증한 인원이 존재하지 않습니다.
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+<%- include('partials/footer') %>

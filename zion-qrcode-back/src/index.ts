@@ -6,7 +6,8 @@ import qrRouter from "./routes/qrcode";
 dotenv.config();
 const app = express();
 
-const PORT = process.env.PORT || 3000;
+const PORT = 4000;
+
 app.use(express.static('public'));
 const corsOptions = {
   origin: '*',
@@ -23,5 +24,8 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`서버가 http://localhost:${PORT} 에서 실행 중입니다.`);
+    console.log("\n==================================================");
+    console.log(`⚙️  [관리자/API] 백엔드 서버 구동 완료!`);
+    console.log(`🔗 접속 주소: http://localhost:${PORT}`);
+    console.log("==================================================\n");
 });

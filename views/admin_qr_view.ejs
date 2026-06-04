@@ -1,0 +1,58 @@
+<%- include('partials/header') %>
+
+<div class="bg-slate-900 text-white min-h-screen flex flex-col justify-between m-0 p-0 font-sans select-none">
+
+    <header class="text-center pt-8 pb-4 border-b border-slate-800 bg-slate-950/50">
+        <h2 class="text-3xl font-extrabold tracking-tight text-blue-400 mb-2">
+            <%= row.title %>
+        </h2>
+        <p class="text-slate-400 text-base">
+            📢 원활한 출석 인정을 위해 본인에게 맞는 크기의 QR코드를 스캔해 주세요.
+        </p>
+    </header>
+
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-8 items-center max-w-[1800px] mx-auto w-full px-12 py-6">
+        
+        <div class="lg:col-span-2 flex flex-col items-center justify-center bg-slate-800/40 p-8 rounded-2xl border border-slate-700/50 shadow-2xl h-full min-h-[550px]">
+            <span class="text-xs font-bold uppercase tracking-widest text-rose-400 bg-rose-500/10 px-3 py-1 rounded-full mb-6 border border-rose-500/20">
+                🔭 뒷열 / 멀리 계신 분 전용 (초대형)
+            </span>
+            
+            <div class="qrCode w-[500px] h-[500px] bg-gray-200 border-4 border-white shadow-sm flex items-center justify-center rounded-xl">
+                <span class="text-gray-400 text-sm font-medium">Large QR Code Area</span>
+            </div>
+            
+            <p class="text-slate-400 text-sm mt-6 font-medium">강의실 중간~뒷열에 계신 분들은 여기를 조준하세요.</p>
+        </div>
+
+        <div class="flex flex-col items-center justify-center bg-slate-800/40 p-8 rounded-2xl border border-slate-700/50 shadow-2xl h-full min-h-[550px]">
+            <span class="text-xs font-bold uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full mb-6 border border-emerald-500/20">
+                🔎 앞열 / 가까이 계신 분 전용 (중소형)
+            </span>
+            
+            <div class="qrCode w-[250px] h-[250px] bg-gray-200 border-4 border-white shadow-sm flex items-center justify-center rounded-xl">
+                <span class="text-gray-400 text-sm font-medium">Small QR Code Area</span>
+            </div>
+            
+            <p class="text-slate-400 text-sm mt-6 font-medium">강의실 맨 앞줄에 계신 분들은 여기를 조준하세요.</p>
+        </div>
+    </main>
+    <script>
+        document.querySelector('aside').classList.add('hidden');
+        async function load_img(){
+            let res = await fetch('/api/qrcode?idx=<%=row.idx%>');
+            let result = await res.json();
+            let qr_code_image = result.data.qrImage;
+            document.querySelectorAll('.qrCode').forEach(item => {
+                item.innerHTML = '';
+                let img = document.createElement('img');
+                img.classList.add('w-full', 'h-full');
+                img.src = qr_code_image;
+                item.appendChild(img);
+            });
+        }
+        load_img();
+        setInterval(load_img, 1000*60*1);
+    </script>
+</div>
+<%- include('partials/footer') %>

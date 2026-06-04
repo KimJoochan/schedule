@@ -12,7 +12,7 @@
         
         <div class="text-center mb-6">
             <h2 class="text-2xl font-semibold text-gray-800 tracking-tight">당일 출결 확인</h2>
-            <p id="current-date-banner" class="text-xs text-gray-400 font-medium mt-1 tracking-wider">0000-00-00 (오늘)</p>
+            <p id="current-date-banner" class="text-xs text-gray-400 font-medium mt-1 tracking-wider"><%=education_info.edu_date%></p>
             <div class="w-full h-[1px] bg-gray-100 mt-4"></div>
         </div>
 
@@ -23,32 +23,40 @@
 
             <div class="border border-gray-100 rounded-lg divide-y divide-gray-100 overflow-hidden shadow-sm">
                 <div class="flex justify-between items-center p-4 bg-gray-50/50">
+                    <span class="text-sm font-medium text-gray-500">교회</span>
+                    <span id="user-name" class="text-sm font-semibold text-gray-800"><%=education_sheet.user_social_church%></span>
+                </div>
+                <div class="flex justify-between items-center p-4 bg-gray-50/50">
+                    <span class="text-sm font-medium text-gray-500">부서</span>
+                    <span id="user-name" class="text-sm font-semibold text-gray-800"><%=education_sheet.user_social_major%></span>
+                </div>
+                <div class="flex justify-between items-center p-4 bg-gray-50/50">
                     <span class="text-sm font-medium text-gray-500">지역</span>
-                    <span id="user-name" class="text-sm font-semibold text-gray-800">어느지역</span>
+                    <span id="user-name" class="text-sm font-semibold text-gray-800"><%=education_sheet.user_social_minor%></span>
                 </div>
                 <div class="flex justify-between items-center p-4 bg-gray-50/50">
                     <span class="text-sm font-medium text-gray-500">팀/구역</span>
-                    <span id="user-name" class="text-sm font-semibold text-gray-800">어느팀/구역</span>
+                    <span id="user-name" class="text-sm font-semibold text-gray-800"><%=education_sheet.user_social_goyuck%></span>
                 </div>
                 <div class="flex justify-between items-center p-4 bg-gray-50/50">
                     <span class="text-sm font-medium text-gray-500">직책</span>
-                    <span id="user-name" class="text-sm font-semibold text-gray-800">어느직책</span>
+                    <span id="user-name" class="text-sm font-semibold text-gray-800"><%=education_sheet.user_social_grade%></span>
                 </div>
                 <div class="flex justify-between items-center p-4 bg-gray-50/50">
                     <span class="text-sm font-medium text-gray-500">성명</span>
-                    <span id="user-name" class="text-sm font-semibold text-gray-800">홍길동</span>
+                    <span id="user-name" class="text-sm font-semibold text-gray-800"><%=education_sheet.user_social_name%></span>
                 </div>
                 <div class="flex justify-between items-center p-4">
                     <span class="text-sm font-medium text-gray-500">날짜</span>
-                    <span id="attendance-date" class="text-sm font-medium text-gray-700">2026-05-28</span>
+                    <span id="attendance-date" class="text-sm font-medium text-gray-700"><%=education_info.edu_date%></span>
                 </div>
                 <div class="flex justify-between items-center p-4 bg-gray-50/50">
                     <span class="text-sm font-medium text-gray-500">교육 과정</span>
-                    <span id="course-name" class="text-sm font-semibold text-gray-800 tracking-tight">푸른 어선들의 밤</span>
+                    <span id="course-name" class="text-sm font-semibold text-gray-800 tracking-tight"><%=education_info.title%></span>
                 </div>
                 <div class="flex justify-between items-center p-4">
                     <span class="text-sm font-medium text-gray-500">체크 시간</span>
-                    <span id="check-time" class="text-sm font-bold text-blue-600">09:15:24</span>
+                    <span id="check-time" class="text-sm font-bold text-blue-600"><%=education_sheet.regdate%></span>
                 </div>
             </div>
             

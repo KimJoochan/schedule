@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <form id="inputForm">
+        <input type="text" id="code">
+        <button type="button" onclick="qr_display();">QR 적용</button>
+    </form>
+    <div class="w-full max-w-xl h-screen max-h-xl">
+        <img src="" alt="" id="qr_code">
+    </div>
+    <script>
+        async function qr_display(){
+            let code = document.querySelector("#code").value;
+            const response = await fetch(`http://localhost:4000/api/qrcode?theme_id=${code}`);
+            const data = await response.json();
+            console.log(data);
+            document.querySelector("#qr_code").src = data.data.qrImage;
+            document.querySelector("#inputForm").classList.add('hidden');
+            repeact();
+        }
+
+        function repeact(){
+            setInterval(qr_display, 1000*60*3);
+        }
+    </script>
+    
+</body>
+</html>
